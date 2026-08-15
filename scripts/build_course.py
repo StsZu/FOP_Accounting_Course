@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Збирає курс в один автономний dist/index.html.
+"""Збирає курс в один автономний index.html.
+
+Артефакт — index.html у корені проєкту: саме його віддає GitHub Pages
+за адресою https://<user>.github.io/<repo>/.
 
 Модулі знаходяться обходом curriculum/level_*/module_*/module_meta.json.
 До збірки потрапляють лише модулі зі статусом із course_meta.publishable_statuses.
@@ -162,9 +165,10 @@ def main() -> int:
     root_default = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=root_default, help="корінь проєкту")
-    parser.add_argument("--output", type=Path, default=None, help="шлях до згенерованого HTML")
+    parser.add_argument("--output", type=Path, default=None,
+                        help="шлях до згенерованого HTML (типово index.html у корені проєкту)")
     args = parser.parse_args()
-    output = args.output or args.root / "dist" / "index.html"
+    output = args.output or args.root / "index.html"
     try:
         render(args.root, output)
     except BuildError as exc:

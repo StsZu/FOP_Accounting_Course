@@ -1,5 +1,5 @@
 // Перевірка логіки зібраного застосунку без браузера:
-// витягує вбудований JSON і скрипт із dist/index.html, підставляє мінімальні заглушки DOM
+// витягує вбудований JSON і скрипт із зібраного index.html, підставляє мінімальні заглушки DOM
 // і перевіряє курсову оболонку, рендер усіх сторінок, оцінювання, пороги, прогрес
 // та відсутність зовнішніх запитів.
 // Запуск: node tests/logic_smoke.mjs [шлях/до/index.html]
@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const target = process.argv[2] ? resolve(process.argv[2]) : resolve(root, "dist/index.html");
+const target = process.argv[2] ? resolve(process.argv[2]) : resolve(root, "index.html");
 const html = readFileSync(target, "utf8");
 const dataMatch = html.match(/<script id="course-data" type="application\/json">([\s\S]*?)<\/script>/);
 const scriptMatch = html.match(/<script>\s*"use strict";([\s\S]*?)<\/script>/);

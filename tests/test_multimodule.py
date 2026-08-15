@@ -34,14 +34,13 @@ def check(name: str, condition: bool, extra: str = "") -> None:
 
 def build(root: Path) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(root / "scripts/build_course.py"), "--root", str(root),
-         "--output", str(root / "dist/index.html")],
+        [sys.executable, str(root / "scripts/build_course.py"), "--root", str(root)],
         capture_output=True, text=True,
     )
 
 
 def payload_of(root: Path) -> dict:
-    html = (root / "dist/index.html").read_text(encoding="utf-8")
+    html = (root / "index.html").read_text(encoding="utf-8")
     match = re.search(r'<script id="course-data" type="application/json">(.*?)</script>', html, re.S)
     assert match, "у зібраному файлі немає даних курсу"
     return json.loads(match.group(1).replace("<\\/", "</"))
@@ -88,9 +87,12 @@ def main() -> int:
         check("інструкція учня одна на курс", isinstance(data["course"]["guide"], str) and len(data["course"]["guide"]) > 100)
         check("шаблон не містить назви модуля 1 поза даними",
               "Хто такий ФОП" not in (root / "app/index.template.html").read_text(encoding="utf-8"))
+        check("головний артефакт лежить у корені для GitHub Pages", (root / "index.html").exists())
+        check("копія для старих посилань збігається з головним артефактом",
+              (root / "index.html").read_bytes() == (root / "index.html").read_bytes())
 
         smoke = subprocess.run(
-            ["node", str(root / "tests/logic_smoke.mjs"), str(root / "dist/index.html")],
+            ["node", str(root / "tests/logic_smoke.mjs"), str(root / "index.html")],
             capture_output=True, text=True,
         )
         check("логічний тест проходить на двомодульній збірці", smoke.returncode == 0,

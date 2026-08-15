@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Що це за репозиторій
 
-Не застосунок, а виробництво навчального курсу: україномовний курс «Бухгалтер ФОП: від нуля до професійного рівня». Контент — Markdown і JSON у `curriculum/` та `quizzes/`; єдиний публічний артефакт — згенерований `dist/index.html`. Код тут лише допоміжний (Python-скрипти складання й перевірок, один HTML-шаблон з вбудованим CSS/JS).
+Не застосунок, а виробництво навчального курсу: україномовний курс «Бухгалтер ФОП: від нуля до професійного рівня». Контент — Markdown і JSON у `curriculum/` та `quizzes/`; єдиний публічний артефакт — згенерований `index.html` у корені репозиторію (його віддає GitHub Pages). Код тут лише допоміжний (Python-скрипти складання й перевірок, один HTML-шаблон з вбудованим CSS/JS).
 
 Мова всього контенту, інтерфейсу й документації — українська.
 
@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 python3 scripts/check_course.py                    # структура всіх модулів + усі квізи + дати актуальності
-python3 scripts/build_course.py                    # → dist/index.html (єдиний спосіб оновити його)
+python3 scripts/build_course.py                    # → index.html у корені (єдиний спосіб оновити артефакт)
 node tests/logic_smoke.mjs                         # логіка зібраного застосунку без браузера
 python3 tests/test_multimodule.py                  # багатомодульне складання й негативні сценарії
 
@@ -25,7 +25,7 @@ python3 .agents/skills/fop-course-builder/scripts/check_freshness.py . --as-of 2
 Залежностей, менеджера пакетів і лінтера немає — stdlib Python 3 і stdlib Node. Усі скрипти повертають ненульовий код при помилці.
 
 - `check_course.py` — головна перевірка: обов'язкові файли модулів, поля `module_meta`, ключі всіх JSON-вправ, узгодженість `initial_order` з `actions`, категорії й відповідальні ризиків, джерела полів практики, `SRC-NNN` у `module_meta.source_ids` і `source_reference` квізів проти `sources/SOURCE_REGISTER.md`, один маркер у шаблоні, рівні в `course_meta.json`. Усередині запускає `validate_quiz.py` для кожного квізу і `check_freshness.py`.
-- `logic_smoke.mjs` витягує JSON і скрипт із `dist/index.html`, підставляє заглушки DOM і перевіряє курсову оболонку, рендер усіх сторінок кожного модуля, оцінювання, пороги, ізоляцію стану між модулями, скидання прогресу й відсутність зовнішніх запитів. Запускати **після** складання — він читає `dist/`, а не шаблон. Заглушки не парсять HTML, тому тест ловить помилки JavaScript і арифметику оцінювання, але не вигляд і не доступність.
+- `logic_smoke.mjs` витягує JSON і скрипт із `index.html`, підставляє заглушки DOM і перевіряє курсову оболонку, рендер усіх сторінок кожного модуля, оцінювання, пороги, ізоляцію стану між модулями, скидання прогресу й відсутність зовнішніх запитів. Запускати **після** складання — він читає зібраний `index.html`, а не шаблон. Заглушки не парсять HTML, тому тест ловить помилки JavaScript і арифметику оцінювання, але не вигляд і не доступність.
 - `test_multimodule.py` копіює проєкт у тимчасовий каталог, дублює модуль, будує двомодульний курс, проганяє на ньому `logic_smoke.mjs` і перевіряє, що складання падає на відсутньому квізі та на `initial_order`, який дорівнює правильній відповіді. Робочий каталог не змінює.
 
 ## Локальний skill
@@ -45,13 +45,13 @@ python3 .agents/skills/fop-course-builder/scripts/check_freshness.py . --as-of 2
 `course_meta.json` + усі `curriculum/level_XX/module_YY_slug/` (6 × `.md` + `module_meta.json` + 5 × `*_activity*.json`) + `quizzes/modules/module_NN_quiz.json` + `LEARNER_GUIDE.md`
 → `scripts/build_course.py` знаходить модулі обходом `curriculum/level_*/module_*/module_meta.json` і серіалізує все в один JSON
 → підставляє його замість єдиного маркера `__COURSE_DATA__` в `app/index.template.html`
-→ `dist/index.html`.
+→ `index.html` у корені репозиторію (артефакт GitHub Pages).
 
 Форма payload: `{course: {...course_meta, published_modules, guide}, modules: [{index, id, level, slug, meta, sections[6], quiz, activities{5}}]}`. Додавання модуля не потребує змін ні в скрипті, ні в шаблоні.
 
 Ключові інваріанти складання:
 
-- `dist/index.html` **ніколи** не редагувати руками — лише перезбирати.
+- `index.html` **ніколи** не редагувати руками — лише перезбирати. Корінь віддає GitHub Pages, тому без кореневого `index.html` головна сторінка показує README; `.nojekyll` вимикає обробку Jekyll.
 - Версія курсу, назва, рівні й `planned_modules` живуть **тільки** в `course_meta.json`.
 - До збірки потрапляють лише модулі зі статусом із `course_meta.publishable_statuses` (`app_ready`, `released`); решта пропускається з повідомленням у вивід — мовчазного відсіювання немає.
 - Квіз шукається за `meta.id`: `module-02` → `quizzes/modules/module_02_quiz.json`. `index` — число з кінця `meta.id`.
@@ -112,4 +112,4 @@ python3 .agents/skills/fop-course-builder/scripts/check_freshness.py . --as-of 2
 
 ## Завершення етапу
 
-Запустити релевантні перевірки → перезібрати `dist/index.html` → пройти модуль наскрізь (помилкові відповіді, повторна спроба, збереження прогресу, мобільна ширина) → оновити `STATUS.md` і `TASK.md` → зафіксувати неперевірені твердження й потребу в бухгалтерській/юридичній перевірці. Рішення людського рев'ю й пропозиції переробки зберігаються в `review/`.
+Запустити релевантні перевірки → перезібрати `index.html` → пройти модуль наскрізь (помилкові відповіді, повторна спроба, збереження прогресу, мобільна ширина) → оновити `STATUS.md` і `TASK.md` → зафіксувати неперевірені твердження й потребу в бухгалтерській/юридичній перевірці. Рішення людського рев'ю й пропозиції переробки зберігаються в `review/`.
