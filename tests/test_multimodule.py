@@ -46,6 +46,14 @@ def payload_of(root: Path) -> dict:
     return json.loads(match.group(1).replace("<\\/", "</"))
 
 
+def publishable_metas(root: Path) -> list[Path]:
+    """Модулі, які вже мають статус, дозволений для публікації, — база для порівняння."""
+    course = json.loads((root / "course_meta.json").read_text(encoding="utf-8"))
+    allowed = set(course.get("publishable_statuses") or ["app_ready", "released"])
+    found = sorted((root / "curriculum").glob("level_*/module_*/module_meta.json"))
+    return [p for p in found if json.loads(p.read_text(encoding="utf-8")).get("status") in allowed]
+
+
 def add_module(root: Path, slug: str, level_dir: str, module_id: str, level: int, title: str, status: str) -> Path:
     target = root / "curriculum" / level_dir / slug
     shutil.copytree(SOURCE_MODULE, target)
@@ -63,23 +71,28 @@ def main() -> int:
         root = Path(tmp) / "course"
         shutil.copytree(ROOT, root, ignore=IGNORE)
 
-        add_module(root, "module_02_test_copy", "level_01", "module-02", 1, "Тестовий модуль 2", "app_ready")
+        baseline = len(publishable_metas(root))
+        check("у проєкті є щонайменше один готовий модуль", baseline >= 1, str(baseline))
+        add_module(root, "module_90_test_copy", "level_01", "module-90", 1, "Тестовий модуль", "app_ready")
         (root / "curriculum/level_02").mkdir(parents=True, exist_ok=True)
-        draft = add_module(root, "module_03_draft", "level_02", "module-03", 2, "Чернетка", "draft")
+        draft = add_module(root, "module_91_draft", "level_02", "module-91", 2, "Чернетка", "draft")
 
         result = build(root)
         check("складання двох модулів завершується успішно", result.returncode == 0, result.stdout.strip() + result.stderr.strip())
         if result.returncode != 0:
             return 1
-        check("модуль зі статусом draft пропущено", "пропущено module_03_draft" in result.stdout, result.stdout.strip().splitlines()[0])
+        check("модуль зі статусом draft пропущено", "пропущено module_91_draft" in result.stdout, result.stdout.strip().splitlines()[0])
 
         data = payload_of(root)
         modules = data["modules"]
-        check("у збірці два модулі", len(modules) == 2, str(len(modules)))
-        check("published_modules порахований фактично", data["course"]["published_modules"] == 2)
+        check("у збірці всі готові модулі плюс доданий", len(modules) == baseline + 1, str(len(modules)))
+        check("published_modules порахований фактично", data["course"]["published_modules"] == baseline + 1)
         check("planned_modules узято з course_meta", data["course"]["planned_modules"] == 38)
-        check("ідентифікатори модулів різні", {m["id"] for m in modules} == {"module-01", "module-02"})
-        check("індекси похідні від id", [m["index"] for m in modules] == [1, 2])
+        identifiers = [m["id"] for m in modules]
+        check("ідентифікатори модулів різні", len(set(identifiers)) == len(identifiers), str(identifiers))
+        check("доданий модуль потрапив до збірки", "module-90" in identifiers)
+        check("індекси похідні від id",
+              [m["index"] for m in modules] == [int(re.search(r"(\d+)$", i).group(1)) for i in identifiers])
         check("порядок за рівнем і номером", modules == sorted(modules, key=lambda m: (m["level"], m["index"])))
         check("у кожного модуля власний квіз", all(m["quiz"] for m in modules))
         check("у кожного модуля сім розділів", all(len(m["sections"]) == 7 for m in modules))
@@ -102,14 +115,14 @@ def main() -> int:
 
         # Негативні сценарії: складання має падати з поясненням, а не мовчати.
         shutil.rmtree(draft)
-        broken_quiz = root / "quizzes/modules/module_02_quiz.json"
+        broken_quiz = root / "quizzes/modules/module_90_quiz.json"
         broken_quiz.unlink()
         result = build(root)
-        check("відсутній квіз зупиняє складання", result.returncode == 1 and "module_02_quiz.json" in result.stdout,
+        check("відсутній квіз зупиняє складання", result.returncode == 1 and "module_90_quiz.json" in result.stdout,
               result.stdout.strip())
         shutil.copy(ROOT / "quizzes/modules/module_01_quiz.json", broken_quiz)
 
-        case_path = root / "curriculum/level_01/module_02_test_copy/case_activity.json"
+        case_path = root / "curriculum/level_01/module_90_test_copy/case_activity.json"
         case = json.loads(case_path.read_text(encoding="utf-8"))
         case["initial_order"] = [action["id"] for action in case["actions"]]
         case_path.write_text(json.dumps(case, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -117,12 +130,13 @@ def main() -> int:
         check("готова відповідь у initial_order зупиняє складання",
               result.returncode == 1 and "initial_order" in result.stdout, result.stdout.strip())
 
-        meta_path = root / "curriculum/level_01/module_02_test_copy/module_meta.json"
+        meta_path = root / "curriculum/level_01/module_90_test_copy/module_meta.json"
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         meta["status"] = "draft"
         meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         result = build(root)
-        check("непідготовлений модуль не потрапляє до збірки", result.returncode == 0 and "модулів: 1" in result.stdout,
+        check("непідготовлений модуль не потрапляє до збірки",
+              result.returncode == 0 and f"модулів: {baseline}" in result.stdout,
               result.stdout.strip().splitlines()[-1])
 
     print("\nПРОВАЛЕНО перевірок: " + str(len(failures)) if failures else "\nусі перевірки пройдено")

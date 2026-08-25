@@ -1,13 +1,13 @@
 # Стан створення курсу
 
-Оновлено: **2026-08-14**
+Оновлено: **2026-08-24**
 
 Статуси: `planned → sources_collected → draft → fact_checked → human_reviewed → quiz_ready → app_ready → released`.
 
 | № | Рівень | Модуль | Відповідальний | Урок | Джерела | Квіз | Застосунок | Перевірено | Відкрите питання |
 |---:|---:|---|---|---|---|---|---|---|---|
 | 1 | 1 | Хто такий ФОП | AI + людина | fact_checked | current | quiz_ready | app_ready | 2026-08-15 | Виправлено 10 дефектів за `review/pilot_fix_register.md`; застосунок переведено на багатомодульну оболонку, перевірку відповідей за ключовими словами, підказки в Практиці й Кейсі, виконано всі пропозиції з `TASK/COURSE_EVALUATION_AND_PROPOSALS.md` (0.5.0-pilot). **Потрібна повторна людська перевірка**: переписано формулювання варіантів квізу й двох дистракторів кейсу. Далі — ручне відкриття `index.html` через `file://` |
-| 2 | 1 | Фінансова грамотність | AI + людина | planned | needs_review | not_started | not_started | — | Наступний в роботі: крок 6 ТЗ, перевірка інфраструктури на другому модулі |
+| 2 | 1 | Фінансова грамотність | AI + бухгалтер/юрист | fact_checked | current | quiz_ready | app_ready | 2026-08-24 | Створено за `TASK/MODULE_02_TECHNICAL_ASSIGNMENT.md` без жодної правки `app/index.template.html` і `scripts/build_course.py`. **Людська перевірка не проведена** — запит і три відкриті питання в `review/module_02_human_review.md`. Наступна перевірка джерел — 01.11.2026 (призначено нову редакцію ПКУ) |
 | 3 | 1 | Податкові системи | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 4 | 2 | Документування господарської операції | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 5 | 2 | Основні види документів | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
@@ -17,7 +17,7 @@
 | 9 | 3 | Класифікація операцій | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 10 | 3 | Готівка, РРО і ПРРО | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 11 | 4 | Єдиний податок | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
-| 12 | 4 | ЄСВ і військовий збір | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
+| 12 | 4 | ЄСВ і військовий збір | AI + бухгалтер | planned | needs_review | not_started | not_started | — | Перетин із `TASK/what_is_happening_after_FOP_closed.md` (ЄСВ після припинення) |
 | 13 | 4 | Податковий агент і 4ДФ | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 14 | 4 | Наймані працівники | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 15 | 4 | ПДВ | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
@@ -27,13 +27,13 @@
 | 19 | 5 | Декларація платника єдиного податку | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 20 | 5 | Робота в Електронному кабінеті | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 21 | 5 | Стан розрахунків із бюджетом | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
-| 22 | 5 | Перевірки й оскарження | AI + юрист | planned | needs_review | not_started | not_started | — | — |
+| 22 | 5 | Перевірки й оскарження | AI + юрист | planned | needs_review | not_started | not_started | — | Врахувати `TASK/what_is_happening_after_FOP_closed.md` (перевірка після припинення ФОП) — сировина, потребує офіційних джерел |
 | 23 | 6 | Відкриття нового клієнта | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 24 | 6 | Щомісячне закриття | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 25 | 6 | Квартальне і річне закриття | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 26 | 6 | Внутрішній контроль | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
-| 27 | 7 | Excel і Google Sheets | AI + людина | planned | needs_review | not_started | not_started | — | — |
-| 28 | 7 | OCR і електронні документи | AI + людина | planned | needs_review | not_started | not_started | — | — |
+| 27 | 7 | Excel і Google Sheets | AI + людина | planned | needs_review | not_started | not_started | — | Врахувати `TASK/what_is_different_csv_xls_xlsx.md` (CSV/XLS/XLSX, вибір формату) |
+| 28 | 7 | OCR і електронні документи | AI + людина | planned | needs_review | not_started | not_started | — | Перетин із `TASK/what_is_different_csv_xls_xlsx.md` (обмін даними з обліковою системою) |
 | 29 | 7 | Бухгалтерські програми | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 30 | 7 | Банківські інтеграції й open banking | AI + людина | planned | needs_review | not_started | not_started | — | — |
 | 31 | 7 | AI-помічник бухгалтера | AI + людина | planned | needs_review | not_started | not_started | — | — |

@@ -38,7 +38,9 @@ python3 .agents/skills/fop-course-builder/scripts/check_freshness.py . --as-of 2
 
 Заплановану в `TECHNICAL_SPEC.md` §5 структуру не вважати наявною: `current_rules/` і `practice/` ще не створені. `current_rules/` свідомо не створено: щойно каталог з'явиться, `check_freshness.py` почне вимагати перевірку кожні 30 днів, тому створювати його треба разом із власником процесу перегляду.
 
-Актуальний план робіт — `TASK/NEXT_STAGE_AFTER_PILOT_AUDIT.md`; відкриті й перенесені дефекти — `review/pilot_fix_register.md`.
+Актуальний план робіт — `TASK/SCALING_PLAN.md` (ТЗ на модулі 3–38) і `TASK/NEXT_STAGE_AFTER_PILOT_AUDIT.md` (етап пілота, кроки 1–6 виконані); зразок ТЗ на один модуль — `TASK/MODULE_02_TECHNICAL_ASSIGNMENT.md`; методична оцінка й статус її виконання — `TASK/COURSE_EVALUATION_AND_PROPOSALS.md`; відкриті й перенесені дефекти — `review/pilot_fix_register.md`.
+
+У `TASK/` лежить також **сировина для майбутніх модулів**, яку користувач просив врахувати: `what_is_different_csv_xls_xlsx.md` (модулі 27–28) і `what_is_happening_after_FOP_closed.md` (модулі 22, 12, перетин із модулем 1). Це чернетки без перевірених джерел — перед використанням знайти першоджерела й зареєструвати їх у `sources/SOURCE_REGISTER.md`; питання звідти не переносити в квіз дослівно (не проходять перевірку антипідказок).
 
 ## Конвеєр складання
 
