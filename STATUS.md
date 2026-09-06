@@ -1,6 +1,6 @@
 # Стан створення курсу
 
-Оновлено: **2026-08-24**
+Оновлено: **2026-09-06**
 
 Статуси: `planned → sources_collected → draft → fact_checked → human_reviewed → quiz_ready → app_ready → released`.
 
@@ -9,7 +9,7 @@
 | 1 | 1 | Хто такий ФОП | AI + людина | fact_checked | current | quiz_ready | app_ready | 2026-08-15 | Виправлено 10 дефектів за `review/pilot_fix_register.md`; застосунок переведено на багатомодульну оболонку, перевірку відповідей за ключовими словами, підказки в Практиці й Кейсі, виконано всі пропозиції з `TASK/COURSE_EVALUATION_AND_PROPOSALS.md` (0.5.0-pilot). **Потрібна повторна людська перевірка**: переписано формулювання варіантів квізу й двох дистракторів кейсу. Далі — ручне відкриття `index.html` через `file://` |
 | 2 | 1 | Фінансова грамотність | AI + бухгалтер/юрист | fact_checked | current | quiz_ready | app_ready | 2026-08-24 | Створено за `TASK/MODULE_02_TECHNICAL_ASSIGNMENT.md` без жодної правки `app/index.template.html` і `scripts/build_course.py`. **Людська перевірка не проведена** — запит і три відкриті питання в `review/module_02_human_review.md`. Наступна перевірка джерел — 01.11.2026 (призначено нову редакцію ПКУ) |
 | 3 | 1 | Податкові системи | AI + бухгалтер | fact_checked | current | quiz_ready | app_ready | 2026-08-25 | Створено за `TASK/MODULE_03_TECHNICAL_ASSIGNMENT.md` без правок інфраструктури; рівень 1 укомплектовано. **Людська перевірка не проведена** — пʼять відкритих питань у `review/module_03_human_review.md`. Наступна перевірка джерел — 01.11.2026 |
-| 4 | 2 | Документування господарської операції | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
+| 4 | 2 | Документування господарської операції | AI + бухгалтер | fact_checked | current | quiz_ready | app_ready | 2026-09-06 | Створено за `TASK/MODULE_04_TECHNICAL_ASSIGNMENT.md` без правок інфраструктури; перший модуль рівня 2. **Людська перевірка не проведена** — чотири відкриті питання в `review/module_04_human_review.md`, головне: перелік обовʼязкових реквізитів адресовано юридичним особам, а не ФОП. Наступна перевірка джерел — 01.11.2026 |
 | 5 | 2 | Основні види документів | AI + бухгалтер | planned | needs_review | not_started | not_started | — | — |
 | 6 | 2 | Договори | AI + юрист | planned | needs_review | not_started | not_started | — | — |
 | 7 | 2 | Електронний архів | AI + людина | planned | needs_review | not_started | not_started | — | — |
