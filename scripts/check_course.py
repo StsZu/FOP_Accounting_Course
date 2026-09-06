@@ -236,6 +236,49 @@ def check_module(directory: Path, root: Path, source_ids: set[str], errors: list
     return meta
 
 
+def check_level_quizzes(root: Path, course: dict, metas: list[dict], source_ids: set[str], errors: list[str]) -> None:
+    """Рівневий квіз: 12–15 наскрізних питань, кожне спирається на ≥2 модулі свого рівня."""
+    directory = root / "quizzes" / "levels"
+    if not directory.exists():
+        return
+    config = (course or {}).get("level_quiz") or {}
+    low, high = int(config.get("min_questions") or 12), int(config.get("max_questions") or 15)
+    levels = {level.get("level") for level in (course or {}).get("levels") or []}
+    by_level = {}
+    for meta in metas:
+        by_level.setdefault(meta.get("level"), set()).add(meta.get("id"))
+    for path in sorted(directory.glob("*_quiz.json")):
+        rel = path.relative_to(root)
+        match = re.search(r"level_(\d+)_quiz\.json$", path.name)
+        if not match:
+            errors.append(f"{rel}: назва має бути виду level_NN_quiz.json")
+            continue
+        level = int(match.group(1))
+        if level not in levels:
+            errors.append(f"{rel}: рівень {level} не описано в course_meta.json")
+            continue
+        quiz = load(path, errors)
+        if not isinstance(quiz, list):
+            continue
+        if not low <= len(quiz) <= high:
+            errors.append(f"{rel}: потрібно {low}–{high} питань, зараз {len(quiz)}")
+        known = by_level.get(level, set())
+        for question in quiz:
+            label = f"{rel}: питання {question.get('id')}"
+            modules = question.get("modules")
+            if not isinstance(modules, list) or len(modules) < 2:
+                errors.append(f"{label}: рівневе питання має спиратися щонайменше на два модулі — інакше це дублікат модульного квізу")
+                continue
+            if len(set(modules)) != len(modules):
+                errors.append(f"{label}: повтор модуля у списку modules")
+            for module_id in modules:
+                if module_id not in known:
+                    errors.append(f"{label}: модуль {module_id} не належить рівню {level} або не опубліковано")
+            for source in question.get("source_reference") or []:
+                if source not in source_ids:
+                    errors.append(f"{label}: посилання на невідоме джерело {source}")
+
+
 def run(script: Path, args: list[str], errors: list[str], root: Path) -> None:
     if not script.exists():
         errors.append(f"{script}: скрипт відсутній")
@@ -290,7 +333,9 @@ def main() -> int:
     if len(set(ids)) != len(ids):
         errors.append(f"дублікати id модулів: {sorted(i for i in ids if ids.count(i) > 1)}")
 
-    for quiz_path in sorted((root / "quizzes/modules").glob("*_quiz.json")):
+    check_level_quizzes(root, course if isinstance(course, dict) else {}, metas, source_ids, errors)
+
+    for quiz_path in sorted((root / "quizzes/modules").glob("*_quiz.json")) + sorted((root / "quizzes/levels").glob("*_quiz.json")):
         run(root / SKILL / "validate_quiz.py", [str(quiz_path)], errors, root)
     run(root / SKILL / "check_freshness.py", [str(root)], errors, root)
 
@@ -299,7 +344,8 @@ def main() -> int:
         for error in dict.fromkeys(errors):
             print(f"- {error}")
         return 1
-    print(f"\nOK: модулів {len(metas)}, джерел {len(source_ids)}, помилок немає")
+    level_quizzes = len(list((root / "quizzes/levels").glob("*_quiz.json"))) if (root / "quizzes/levels").exists() else 0
+    print(f"\nOK: модулів {len(metas)}, рівневих квізів {level_quizzes}, джерел {len(source_ids)}, помилок немає")
     return 0
 
 

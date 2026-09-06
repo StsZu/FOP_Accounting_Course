@@ -65,7 +65,7 @@ const stubs = {
   confirm: () => true,
 };
 
-const exposed = `;globalThis.__api={get state(){return state},set state(v){state=v},get view(){return view},set view(v){view=v},get current(){return current},set current(v){current=v},get mod(){return mod},get ms(){return ms},COURSE,MODULES,PAGES,STORAGE_KEY,STATE_VERSION,weights,quizThreshold,noteMin,reasonMin,blockingStatuses,startOrder,freshState,freshModuleState,stateOf,peekState,openModule,openCourse,neighbour,resetModule,resetCourse,checkPractice,checkCase,moveTo,orderVerdict,caseHintLevel,raiseCaseHint,matches,normalize,words,compact,hintSteps,hintLevel,raiseHint,hintsUsed,lessonDone,practiceDone,caseDone,checklistDone,checklistItemValid,checklistIssue,checklistHintLevel,raiseChecklistHint,quizHintLevel,raiseQuizHint,quizHintsUsed,quizDone,quizPercent,glossaryDone,pageDone,progressOf,courseProgress,completedModules,render,go,correctIndex,legacyKeys,reviewAdd,reviewDrop,reviewAll,reviewDue,reviewPass,reviewFail,reviewContent,reviewStore,todayISO,addDays,REVIEW,missionById,sessionOf,openReview};`;
+const exposed = `;globalThis.__api={get state(){return state},set state(v){state=v},get view(){return view},set view(v){view=v},get current(){return current},set current(v){current=v},get mod(){return mod},get ms(){return ms},COURSE,MODULES,PAGES,STORAGE_KEY,STATE_VERSION,weights,quizThreshold,noteMin,reasonMin,blockingStatuses,startOrder,freshState,freshModuleState,stateOf,peekState,openModule,openCourse,neighbour,resetModule,resetCourse,checkPractice,checkCase,moveTo,orderVerdict,caseHintLevel,raiseCaseHint,matches,normalize,words,compact,hintSteps,hintLevel,raiseHint,hintsUsed,lessonDone,practiceDone,caseDone,checklistDone,checklistItemValid,checklistIssue,checklistHintLevel,raiseChecklistHint,quizHintLevel,raiseQuizHint,quizHintsUsed,quizDone,quizPercent,glossaryDone,pageDone,progressOf,courseProgress,completedModules,render,go,correctIndex,legacyKeys,reviewAdd,reviewDrop,reviewAll,reviewDue,reviewPass,reviewFail,reviewContent,reviewStore,todayISO,addDays,REVIEW,missionById,sessionOf,openReview,LEVEL_QUIZ,LEVELS_WITH_QUIZ,get levelNo(){return levelNo},set levelNo(v){levelNo=v},openLevelQuiz,levelById,levelStateOf,peekLevelState,levelScore,levelPercent,levelThreshold,levelDone,levelBand,freshLevelState};`;
 
 const fn = new Function(...Object.keys(stubs), `"use strict";${scriptMatch[1]}${exposed}`);
 fn(...Object.values(stubs));
@@ -220,7 +220,14 @@ if (api.MODULES.length > 1) {
 // 7. Збереження й відновлення стану
 const saved = stubs.localStorage.getItem(api.STORAGE_KEY);
 check("стан збережено в localStorage", Boolean(saved), api.STORAGE_KEY);
-check("ключ стану версії v4", /:v4$/.test(api.STORAGE_KEY));
+check("ключ стану версії v5", /:v5$/.test(api.STORAGE_KEY));
+check("старий курсовий ключ розпізнається як застарілий", (() => {
+  const legacy = `fop-course:${api.COURSE.id}:v4`;
+  stubs.localStorage.setItem(legacy, "{}");
+  const found = api.legacyKeys();
+  stubs.localStorage.removeItem(legacy);
+  return found.includes(legacy) && !found.includes(api.STORAGE_KEY);
+})());
 const parsed = JSON.parse(saved);
 check("збережено стан кожного відкритого модуля", Boolean(parsed.modules[mod.id]));
 check("версія стану у сховищі збігається", parsed.version === api.STATE_VERSION);
@@ -471,6 +478,55 @@ api.openModule(api.MODULES[0].id);
 api.ms.practice.answers[api.mod.activities.practice.fields[0].id] = { value: "хибне значення", source: "", missing: false };
 api.checkPractice();
 check("помилка практики сама потрапляє в чергу", api.reviewAll().some((i) => i.kind === "practice"));
+
+// 13.2 Рівневий квіз
+const levels = api.LEVELS_WITH_QUIZ;
+check("рівневий квіз є лише в закритих рівнях",
+  api.COURSE.levels.every((l) => !Array.isArray(l.quiz) || api.MODULES.filter((m) => m.level === l.level).length >= l.planned_modules),
+  `рівнів із квізом: ${levels.length}`);
+if (levels.length) {
+  const level = levels[0];
+  check("рівневий квіз має 12–15 питань", level.quiz.length >= 12 && level.quiz.length <= 15, String(level.quiz.length));
+  check("кожне питання спирається щонайменше на два модулі",
+    level.quiz.every((q) => Array.isArray(q.modules) && q.modules.length >= 2));
+  check("усі названі модулі належать цьому рівню",
+    level.quiz.every((q) => q.modules.every((id) => { const m = api.MODULES.find((x) => x.id === id); return m && m.level === level.level; })));
+  api.state = api.freshState();
+  api.openModule(api.MODULES[0].id);
+  const courseBefore = api.courseProgress();
+  api.openLevelQuiz(level.level);
+  check("відкриття рівневої перевірки дає власний вид", api.view === "level");
+  try { api.render(); check("render:рівнева перевірка", true); } catch (e) { check("render:рівнева перевірка", false, e.message); }
+  const ls = api.levelStateOf(level.level);
+  check("порожня рівнева перевірка → 0%", api.levelPercent(level, ls) === 0);
+  check("незавершена перевірка не зарахована", api.levelDone(level, ls) === false);
+  level.quiz.forEach((q, i) => { ls.answers[i] = q.options.findIndex((o) => o.correct === true); });
+  ls.showResult = true;
+  check("усі правильні → 100%", api.levelPercent(level, ls) === 100);
+  check("рівнева перевірка зарахована", api.levelDone(level, ls) === true);
+  try { api.render(); check("render:підсумок рівневої перевірки", true); } catch (e) { check("render:підсумок рівневої перевірки", false, e.message); }
+  check("рівнева перевірка не змінює прогрес курсу", api.courseProgress() === courseBefore, `${courseBefore}%`);
+  check("рівнева перевірка не зараховує модулі", api.completedModules() === 0);
+  const half = Math.max(1, Math.ceil(level.quiz.length * 0.4));
+  for (let i = 0; i < half; i++) ls.answers[i] = (ls.answers[i] + 1) % 3;
+  const partial = api.levelPercent(level, ls);
+  check("нижче порогу не зараховано", partial < api.levelThreshold() && api.levelDone(level, ls) === false, `${partial}%`);
+  check("коментар результату залежить від діапазону",
+    api.levelBand(95).text !== api.levelBand(60).text && api.levelBand(30).tone === "fail" && api.levelBand(95).tone === "pass");
+  api.state = api.freshState();
+  const s2 = api.levelStateOf(level.level);
+  s2.answers[0] = (level.quiz[0].options.findIndex((o) => o.correct === true) + 1) % 3;
+  api.reviewAdd(level.quiz[0].modules[0], "level", level.level + ":0");
+  const entry = api.reviewAll().find((x) => x.kind === "level");
+  check("помилка рівневої перевірки потрапляє в чергу", Boolean(entry));
+  check("позиція черги знає своє питання", Boolean(entry && api.reviewContent(entry) && api.reviewContent(entry).question),
+    entry && api.reviewContent(entry) ? api.reviewContent(entry).label : "");
+  check("стан рівня ізольований від стану модулів",
+    Object.keys(api.state.levels).join(",") === String(level.level) && Object.keys(api.state.modules).length === 0);
+  api.openCourse();
+  check("повернення до курсу зі стану рівня", api.view === "course");
+  api.state = api.freshState();
+}
 
 // 14. Автономність
 const external = (html.match(/(https?:)?\/\/[^"'\s)]+/g) || [])

@@ -113,6 +113,35 @@ def collect_module(directory: Path, root: Path) -> dict:
     }
 
 
+def level_quiz_path(root: Path, level: int) -> Path:
+    return root / "quizzes" / "levels" / f"level_{int(level):02d}_quiz.json"
+
+
+def collect_level_quiz(root: Path, level: dict, published: int, report) -> list | None:
+    """Рівневий квіз потрапляє до збірки, лише коли рівень закрито.
+
+    Машинний відповідник вимоги SCALING_PLAN §7.1 «всі модулі рівня готові»:
+    інших даних про готовність незібраних модулів у збірці немає.
+    """
+    path = level_quiz_path(root, level.get("level"))
+    if not path.exists():
+        return None
+    planned = int(level.get("planned_modules") or 0)
+    if published < planned:
+        report(f"пропущено {path.name}: рівень {level.get('level')} ще не закрито "
+               f"({published} із {planned} модулів опубліковано)")
+        return None
+    quiz = read_json(path)
+    if not isinstance(quiz, list) or not quiz:
+        raise BuildError(f"{path}: очікується непорожній список питань")
+    for question in quiz:
+        modules = question.get("modules") if isinstance(question, dict) else None
+        if not isinstance(modules, list) or len(modules) < 2:
+            raise BuildError(f"{path}: питання {question.get('id') if isinstance(question, dict) else '?'} "
+                             f"має спиратися щонайменше на два модулі рівня")
+    return quiz
+
+
 def discover(root: Path) -> list[Path]:
     curriculum = root / "curriculum"
     if not curriculum.exists():
@@ -141,6 +170,15 @@ def build_payload(root: Path, report=print) -> dict:
     course_payload = dict(course)
     course_payload.pop("publishable_statuses", None)
     course_payload["published_modules"] = len(modules)
+    levels = []
+    for level in course_payload.get("levels") or []:
+        entry = dict(level)
+        published = sum(1 for module in modules if module["level"] == level.get("level"))
+        quiz = collect_level_quiz(root, level, published, report)
+        if quiz:
+            entry["quiz"] = quiz
+        levels.append(entry)
+    course_payload["levels"] = levels
     course_payload["guide"] = guide_path.read_text(encoding="utf-8").strip()
     return {"course": course_payload, "modules": modules}
 
@@ -154,9 +192,12 @@ def render(root: Path, output: Path, report=print) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(template.replace(MARKER, encoded), encoding="utf-8")
     questions = sum(len(module["quiz"]) for module in payload["modules"])
+    level_questions = sum(len(level.get("quiz") or []) for level in payload["course"].get("levels") or [])
     report(
         f"{output}\nмодулів: {len(payload['modules'])} із {payload['course']['planned_modules']} запланованих, "
-        f"питань: {questions}, розмір: {output.stat().st_size // 1024} КБ"
+        f"питань: {questions}"
+        + (f" (+{level_questions} рівневих)" if level_questions else "")
+        + f", розмір: {output.stat().st_size // 1024} КБ"
     )
     return output
 
