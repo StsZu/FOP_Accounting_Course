@@ -3,8 +3,8 @@
   "id": "fop-accounting-course",
   "title": "Бухгалтер ФОП: від нуля до професійного рівня",
   "subtitle": "Практичний курс обліку та оподаткування ФОП для початківця",
-  "version": "0.11.0",
-  "updated": "2026-09-06",
+  "version": "0.12.0",
+  "updated": "2026-09-07",
   "planned_modules": 38,
   "publishable_statuses": [
     "app_ready",
